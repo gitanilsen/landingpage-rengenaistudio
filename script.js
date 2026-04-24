@@ -236,12 +236,67 @@ document.addEventListener('DOMContentLoaded', () => {
             localStorage.setItem('rengen-theme', isLight ? 'light' : 'dark');
 
             // Update mobile menu background if it's open
-            if(navLinks.style.display === 'flex') {
+            const navLinks = document.querySelector('.nav-links');
+            if(navLinks && navLinks.style.display === 'flex') {
                 navLinks.style.background = isLight ? 'rgba(255, 255, 255, 0.95)' : 'rgba(5, 5, 10, 0.95)';
             }
         });
     }
 
-
+    // --- Custom YouTube Video Player Logic ---
+    const videoWrappers = document.querySelectorAll('.video-wrapper');
+    videoWrappers.forEach(wrapper => {
+        const iframe = wrapper.querySelector('iframe');
+        if (iframe) {
+            const src = iframe.getAttribute('src');
+            const match = src.match(/\/embed\/([^?]+)/);
+            if (match && match[1]) {
+                const videoId = match[1];
+                const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+                
+                const customThumb = document.createElement('div');
+                customThumb.style.cssText = `position: absolute; top: 0; left: 0; width: 100%; height: 100%; cursor: pointer; background-image: url('${thumbnailUrl}'); background-size: cover; background-position: center; transition: all 0.3s ease;`;
+                
+                customThumb.innerHTML = `
+                    <div class="play-btn-overlay" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 68px; height: 48px; background-color: rgba(255,0,0,0.8); border-radius: 12px; display: flex; justify-content: center; align-items: center; transition: background-color 0.3s ease, transform 0.2s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
+                        <svg viewBox="0 0 24 24" width="32" height="32" fill="white"><path d="M8 5v14l11-7z"/></svg>
+                    </div>
+                `;
+                
+                const playBtnOverlay = customThumb.querySelector('.play-btn-overlay');
+                
+                customThumb.addEventListener('mouseenter', () => {
+                    playBtnOverlay.style.backgroundColor = 'red';
+                    playBtnOverlay.style.transform = 'translate(-50%, -50%) scale(1.05)';
+                });
+                
+                customThumb.addEventListener('mouseleave', () => {
+                    playBtnOverlay.style.backgroundColor = 'rgba(255,0,0,0.8)';
+                    playBtnOverlay.style.transform = 'translate(-50%, -50%) scale(1)';
+                });
+                
+                customThumb.addEventListener('click', () => {
+                    let playSrc = src;
+                    if (playSrc.includes('?')) {
+                        if (!playSrc.includes('autoplay=1')) playSrc += '&autoplay=1';
+                    } else {
+                        playSrc += '?autoplay=1';
+                    }
+                    iframe.setAttribute('src', playSrc);
+                    
+                    let currentAllow = iframe.getAttribute('allow') || '';
+                    if (!currentAllow.includes('autoplay')) {
+                        iframe.setAttribute('allow', currentAllow ? currentAllow + '; autoplay' : 'autoplay');
+                    }
+                    
+                    wrapper.innerHTML = '';
+                    wrapper.appendChild(iframe);
+                });
+                
+                wrapper.innerHTML = '';
+                wrapper.appendChild(customThumb);
+            }
+        }
+    });
 
 });
